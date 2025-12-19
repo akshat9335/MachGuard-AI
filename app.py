@@ -9,6 +9,10 @@ import time
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+
 
 # =====================================================
 # ENV + OPENROUTER CLIENT
@@ -551,23 +555,39 @@ else:
             )
 
 
-# =====================================================
-# SENSOR TREND
-# =====================================================
-st.markdown("## 📈 Sensor Trend")
-feature = st.selectbox("Select sensor", features)
+# -------------------------------
+# Sensor Trend with Zoom
+# -------------------------------
+st.subheader("📈 Sensor Trend Analysis (Zoom at Sharp End)")
 
-if mode == "📊 Dataset Machine":
-    window = 20
-    start = max(0, row_id - window)
-    end = min(len(df)-1, row_id + window)
-    trend = df.iloc[start:end+1][feature].values
-else:
-    base = sample[feature].values[0]
-    trend = np.random.normal(base, 0.1, 25)
+sensor_option = st.selectbox(
+    "Select Sensor",
+    ["temperature", "vibration", "pressure", "rpm"]
+)
 
-fig_t, ax_t = plt.subplots(figsize=(6,3))
-ax_t.plot(trend)
-ax_t.axhline(trend[-1], linestyle="--")
-ax_t.grid(True, alpha=0.3)
-st.pyplot(fig_t)
+zoom_points = st.slider(
+    "🔍 Zoom last N readings (Sharp End)",
+    min_value=20,
+    max_value=200,
+    value=60,
+    step=10
+)
+
+zoom_df = df.tail(zoom_points)
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(
+    zoom_df["time"],
+    zoom_df[sensor_option],
+    color="red",
+    linewidth=2,
+    label=sensor_option.capitalize()
+)
+
+ax.set_title(f"Zoomed Sensor Trend – {sensor_option.capitalize()}")
+ax.set_xlabel("Time")
+ax.set_ylabel("Sensor Value")
+ax.legend()
+ax.grid(True)
+
+st.pyplot(fig)
