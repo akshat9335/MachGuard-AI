@@ -12,6 +12,31 @@ from dotenv import load_dotenv
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.express as px
+
+
+# ===============================
+# CONSTANTS
+# ===============================
+MAX_LIFECYCLE = 120
+FEATURES = ["temperature", "vibration", "pressure", "rpm"]
+
+# ===============================
+# SAFE OPERATING RANGES
+# ===============================
+SAFE_RANGES = {
+    "temperature": (50, 70),
+    "vibration": (0.5, 1.8),
+    "pressure": (4.2, 6.0),
+    "rpm": (1250, 1600)
+}
+
+SENSOR_UNITS = {
+    "temperature": "°C",
+    "vibration": "mm/s",
+    "pressure": "bar",
+    "rpm": "RPM"
+}
 
 
 # =====================================================
@@ -556,38 +581,151 @@ else:
 
 
 # -------------------------------
-# Sensor Trend with Zoom
-# -------------------------------
-st.subheader("📈 Sensor Trend Analysis (Zoom at Sharp End)")
+import plotly.graph_objects as go
 
-sensor_option = st.selectbox(
+# Fallback for row_id (Manual / Real-time modes)
+if "row_id" not in locals():
+    row_id = len(df) // 2
+
+
+# =====================================================
+# SENSOR TREND — ADVANCED INTERACTIVE VIEW (FIXED)
+# =====================================================
+st.subheader("📈 Sensor Trend Analysis (Interactive)")
+
+feature_to_plot = st.selectbox(
     "Select Sensor",
-    ["temperature", "vibration", "pressure", "rpm"]
+    FEATURES
 )
 
-zoom_points = st.slider(
-    "🔍 Zoom last N readings (Sharp End)",
-    min_value=20,
-    max_value=200,
-    value=60,
-    step=10
+window = st.slider(
+    "Analysis Window (data points)",
+    min_value=10,
+    max_value=60,
+    value=25
 )
 
-zoom_df = df.tail(zoom_points)
+center = row_id
+start = max(0, center - window)
+end = min(len(df) - 1, center + window)
 
-fig, ax = plt.subplots(figsize=(10, 4))
-ax.plot(
-    zoom_df["time"],
-    zoom_df[sensor_option],
-    color="red",
-    linewidth=2,
-    label=sensor_option.capitalize()
+plot_df = df.iloc[start:end + 1]
+
+low, high = SAFE_RANGES[feature_to_plot]
+unit = SENSOR_UNITS[feature_to_plot]
+
+fig = go.Figure()
+
+# ===============================
+# MAIN SENSOR CURVE
+# ===============================
+fig.add_trace(go.Scatter(
+    x=plot_df["time"],
+    y=plot_df[feature_to_plot],
+    mode="lines+markers",
+    name=feature_to_plot.capitalize(),
+    line=dict(width=3, shape="spline", color="#2563EB"),
+    marker=dict(size=6, color="#2563EB", line=dict(width=1, color="white")),
+    hovertemplate=
+        "<b>Time:</b> %{x}<br>"
+        "<b>Value:</b> %{y:.2f} " + unit +
+        "<extra></extra>"
+))
+
+# ===============================
+# SAFE RANGE
+# ===============================
+fig.add_hrect(
+    y0=low,
+    y1=high,
+    fillcolor="rgba(34,197,94,0.18)",
+    line_width=0,
+    annotation_text="Safe Range",
+    annotation_position="top left"
 )
 
-ax.set_title(f"Zoomed Sensor Trend – {sensor_option.capitalize()}")
-ax.set_xlabel("Time")
-ax.set_ylabel("Sensor Value")
-ax.legend()
-ax.grid(True)
+# ===============================
+# WARNING ZONE
+# ===============================
+fig.add_hrect(
+    y0=high,
+    y1=high * 1.15,
+    fillcolor="rgba(245,158,11,0.22)",
+    line_width=0,
+    annotation_text="Warning Zone",
+    annotation_position="top left"
+)
 
-st.pyplot(fig)
+# ===============================
+# SELECTED POINT
+# ===============================
+fig.add_vline(
+    x=df.iloc[center]["time"],
+    line_dash="dot",
+    line_color="rgba(220,38,38,0.7)",
+    annotation_text="Selected Time",
+    annotation_position="top"
+)
+
+# ===============================
+# ANOMALY POINTS
+# ===============================
+if "anomaly" in df.columns:
+    anomaly_df = plot_df[plot_df["anomaly"] == 1]
+    if not anomaly_df.empty:
+        fig.add_trace(go.Scatter(
+            x=anomaly_df["time"],
+            y=anomaly_df[feature_to_plot],
+            mode="markers",
+            name="Anomaly",
+            marker=dict(size=10, color="#DC2626", symbol="x"),
+            hovertemplate=
+                "<b>Time:</b> %{x}<br>"
+                "<b>Value:</b> %{y:.2f} " + unit +
+                "<extra></extra>"
+        ))
+
+# ===============================
+# FINAL LAYOUT
+# ===============================
+fig.update_layout(
+    height=540,
+    hovermode="x unified",
+    dragmode="zoom",
+    template="simple_white",
+
+    plot_bgcolor="rgba(248,250,252,1)",
+    paper_bgcolor="rgba(248,250,252,1)",
+
+    title=dict(
+        text=f"{feature_to_plot.capitalize()} Sensor Trend",
+        x=0.02,
+        font=dict(size=20, color="#111827")
+    ),
+
+    font=dict(family="Inter, Segoe UI, Arial", size=13, color="#1F2937"),
+
+    margin=dict(l=60, r=40, t=70, b=55),
+
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+    ),
+
+    xaxis=dict(
+        title="Time Index (Operating Time)",
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.08)"
+    ),
+
+    yaxis=dict(
+        title=f"{feature_to_plot.capitalize()} ({unit})",
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.08)"
+    )
+)
+
+st.plotly_chart(fig, use_container_width=True)
