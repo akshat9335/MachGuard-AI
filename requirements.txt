@@ -8,4 +8,4 @@ shap
 requests
 python-dotenv
 openai
- 
+plotly==6.5.0 

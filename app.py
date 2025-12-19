@@ -724,18 +724,33 @@ fig.update_layout(
     ),
 
     xaxis=dict(
-        title="Time",
-        showgrid=True,
-        gridcolor="rgba(0,0,0,0.04)",
-        zeroline=False
+    title=dict(
+        text="Time",
+        font=dict(color="#111827", size=14)
     ),
+    tickfont=dict(color="#111827", size=12),
+    showgrid=True,
+    gridcolor="rgba(0,0,0,0.06)",
+    zeroline=False,
+    showline=True,
+    linecolor="#CBD5E1",
+    linewidth=1
+),
 
-    yaxis=dict(
-        title=feature_to_plot.capitalize(),
-        showgrid=True,
-        gridcolor="rgba(0,0,0,0.04)",
-        zeroline=False
-    )
+yaxis=dict(
+    title=dict(
+        text=feature_to_plot.capitalize(),
+        font=dict(color="#111827", size=14)
+    ),
+    tickfont=dict(color="#111827", size=12),
+    showgrid=True,
+    gridcolor="rgba(0,0,0,0.06)",
+    zeroline=False,
+    showline=True,
+    linecolor="#CBD5E1",
+    linewidth=1
+)
+
 )
 
 st.plotly_chart(fig, use_container_width=True)
