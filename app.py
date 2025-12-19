@@ -583,23 +583,15 @@ else:
 # -------------------------------
 import plotly.graph_objects as go
 
-# Fallback for row_id (Manual / Real-time modes)
-if "row_id" not in locals():
-    row_id = len(df) // 2
-
-
-# =====================================================
-# SENSOR TREND — ADVANCED INTERACTIVE VIEW (FIXED)
-# =====================================================
-st.subheader("📈 Sensor Trend Analysis (Interactive)")
+st.subheader("📈 Sensor Trend — Advanced Diagnostic View")
 
 feature_to_plot = st.selectbox(
-    "Select Sensor",
+    "Choose sensor",
     FEATURES
 )
 
 window = st.slider(
-    "Analysis Window (data points)",
+    "Window size (data points)",
     min_value=10,
     max_value=60,
     value=25
@@ -612,63 +604,69 @@ end = min(len(df) - 1, center + window)
 plot_df = df.iloc[start:end + 1]
 
 low, high = SAFE_RANGES[feature_to_plot]
-unit = SENSOR_UNITS[feature_to_plot]
 
 fig = go.Figure()
 
 # ===============================
-# MAIN SENSOR CURVE
+# SENSOR LINE (SMOOTH + PREMIUM)
 # ===============================
 fig.add_trace(go.Scatter(
     x=plot_df["time"],
     y=plot_df[feature_to_plot],
     mode="lines+markers",
     name=feature_to_plot.capitalize(),
-    line=dict(width=3, shape="spline", color="#2563EB"),
-    marker=dict(size=6, color="#2563EB", line=dict(width=1, color="white")),
+    line=dict(
+        width=3.5,
+        shape="spline",
+        color="#2563EB"   # premium blue
+    ),
+    marker=dict(
+        size=6,
+        color="#2563EB",
+        line=dict(width=1.2, color="white")
+    ),
     hovertemplate=
         "<b>Time:</b> %{x}<br>"
-        "<b>Value:</b> %{y:.2f} " + unit +
-        "<extra></extra>"
+        "<b>Value:</b> %{y:.2f}<extra></extra>"
 ))
 
 # ===============================
-# SAFE RANGE
+# SAFE RANGE (GRADIENT FEEL)
 # ===============================
 fig.add_hrect(
     y0=low,
     y1=high,
-    fillcolor="rgba(34,197,94,0.18)",
+    fillcolor="rgba(34,197,94,0.18)",  # emerald green
     line_width=0,
-    annotation_text="Safe Range",
+    annotation_text="Safe operating range",
     annotation_position="top left"
 )
 
 # ===============================
-# WARNING ZONE
+# WARNING RANGE
 # ===============================
 fig.add_hrect(
     y0=high,
     y1=high * 1.15,
-    fillcolor="rgba(245,158,11,0.22)",
+    fillcolor="rgba(245,158,11,0.22)",  # amber
     line_width=0,
-    annotation_text="Warning Zone",
+    annotation_text="Warning zone",
     annotation_position="top left"
 )
 
 # ===============================
-# SELECTED POINT
+# SELECTED POINT (FOCUS MARKER)
 # ===============================
 fig.add_vline(
     x=df.iloc[center]["time"],
     line_dash="dot",
     line_color="rgba(220,38,38,0.7)",
-    annotation_text="Selected Time",
+    annotation_text="Focus",
     annotation_position="top"
 )
 
 # ===============================
-# ANOMALY POINTS
+# ANOMALY MARKERS (IF ANY)
 # ===============================
 if "anomaly" in df.columns:
     anomaly_df = plot_df[plot_df["anomaly"] == 1]
@@ -678,15 +676,19 @@ if "anomaly" in df.columns:
             y=anomaly_df[feature_to_plot],
             mode="markers",
             name="Anomaly",
-            marker=dict(size=10, color="#DC2626", symbol="x"),
+            marker=dict(
+                size=10,
+                color="#DC2626",
+                symbol="x"
+            ),
             hovertemplate=
-                "<b>Time:</b> %{x}<br>"
-                "<b>Value:</b> %{y:.2f} " + unit +
-                "<extra></extra>"
+                "<b>Anomaly</b><br>"
+                "Time: %{x}<br>"
+                "Value: %{y:.2f}<extra></extra>"
         ))
 
 # ===============================
-# FINAL LAYOUT
+# ULTIMATE LAYOUT POLISH
 # ===============================
 fig.update_layout(
     height=540,
@@ -698,33 +700,41 @@ fig.update_layout(
     paper_bgcolor="rgba(248,250,252,1)",
 
     title=dict(
-        text=f"{feature_to_plot.capitalize()} Sensor Trend",
+        text=f"{feature_to_plot.capitalize()} — Sensor Health Trend",
         x=0.02,
+        xanchor="left",
         font=dict(size=20, color="#111827")
     ),
 
-    font=dict(family="Inter, Segoe UI, Arial", size=13, color="#1F2937"),
+    font=dict(
+        family="Inter, Segoe UI, Arial",
+        size=13,
+        color="#1F2937"
+    ),
 
-    margin=dict(l=60, r=40, t=70, b=55),
+    margin=dict(l=50, r=40, t=70, b=45),
 
     legend=dict(
         orientation="h",
         yanchor="bottom",
         y=1.02,
         xanchor="right",
-        x=1
+        x=1,
+        font=dict(size=12)
     ),
 
     xaxis=dict(
-        title="Time Index (Operating Time)",
+        title="Time",
         showgrid=True,
-        gridcolor="rgba(0,0,0,0.08)"
+        gridcolor="rgba(0,0,0,0.04)",
+        zeroline=False
     ),
 
     yaxis=dict(
-        title=f"{feature_to_plot.capitalize()} ({unit})",
+        title=feature_to_plot.capitalize(),
         showgrid=True,
-        gridcolor="rgba(0,0,0,0.08)"
+        gridcolor="rgba(0,0,0,0.04)",
+        zeroline=False
     )
 )
 
