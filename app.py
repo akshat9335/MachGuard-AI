@@ -596,7 +596,7 @@ window = st.slider(
     max_value=60,
     value=25
 )
-
+row_id = 0
 center = row_id
 start = max(0, center - window)
 end = min(len(df) - 1, center + window)
