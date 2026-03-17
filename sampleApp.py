@@ -622,10 +622,22 @@ elif mode == "🔌 Arduino Live Sensors":
     st.markdown("## 🧠 Contributing Factors")
 
     for i in top_idx:
-        st.write(f"{FEATURES[i]} → {impact_pct[i]:.1f}%")
-       
+        percent = impact_pct[i]
 
-    
+        st.markdown(f"""
+        <div class="contribution-card">
+            <div class="sensor-title">{FEATURES[i].upper()}</div>
+            <div class="sensor-value">Impact: {percent:.1f}%</div>
+
+            <div class="progress-bg">
+                <div class="progress-fill" style="width:{percent}%"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ================= ALERT =================
+    if status_type == "critical":
+        st.error("⚠ Machine needs immediate attention!")
 
     # ================= REFRESH =================
     time.sleep(2)
@@ -739,9 +751,9 @@ elif mode == "📡 Real-Time Monitoring":
         </div>
         """, unsafe_allow_html=True)
 
-    
-        
-
+    # ================= ALERT =================
+    if status_type == "critical":
+        st.error("⚠ Machine needs immediate attention!")
 
     # ================= AUTO REFRESH =================
     time.sleep(3)
